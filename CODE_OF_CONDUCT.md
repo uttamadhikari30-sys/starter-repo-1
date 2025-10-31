@@ -1,79 +1,473 @@
-# Adobe Code of Conduct
+# Finance Audit Tracker — Starter Repo (From Scratch)
 
-## Our Pledge
+This canvas contains a complete starter repository skeleton you can copy into a real repo. It includes backend (Node + Express + TypeScript), frontend (React + Vite + TypeScript + Tailwind), Docker Compose for local dev (Postgres + MinIO), and an `init.sql` to create the core schema.
 
-We as members, contributors, and leaders pledge to make participation in our project and community a harassment-free experience for everyone, regardless of age, body size, visible or invisible disability, ethnicity, gender identity and expression, level of experience, education, socio-economic status, nationality, personal appearance, race, caste, color, religion, or sexual identity and orientation.
+---
 
-We pledge to act and interact in ways that contribute to an open, welcoming, diverse, inclusive, and healthy community.
+## What’s included (file tree)
 
-## Our Standards
+```
+finance-audit-tracker-starter/
+├── README.md
+├── .env.example
+├── docker-compose.yml
+├── backend/
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── src/
+│       ├── index.ts
+│       ├── routes/
+│       │   └── audits.ts
+│       ├── db/
+│       │   └── init.sql
+│       └── lib/
+│           └── db.ts
+├── frontend/
+│   ├── package.json
+│   ├── index.html
+│   └── src/
+│       ├── main.tsx
+│       └── App.tsx
+└── .gitignore
+```
 
-Examples of behavior that contribute to a positive environment for our project and community include:
+---
 
-*	Demonstrating empathy and kindness toward other people
-*	Being respectful of differing opinions, viewpoints, and experiences
-*	Giving and gracefully accepting constructive feedback
-*	Accepting responsibility and apologizing to those affected by our mistakes, and learning from the experience
-*	Focusing on what is best, not just for us as individuals but for the overall community
+> **Note:** All files are included below as code blocks. Copy them into your local project or paste into files in your repo.
 
-Examples of unacceptable behavior include:
+---
 
-*	The use of sexualized language or imagery, and sexual attention or advances of any kind
-*	Trolling, insulting or derogatory comments, and personal or political attacks
-*	Public or private harassment
-*	Publishing others’ private information, such as a physical or email address, without their explicit permission
-*	Other conduct which could reasonably be considered inappropriate in a professional setting
+## README.md
 
-## Our Responsibilities
+````markdown
+# Finance Audit Tracker — Starter Repo
 
-Project maintainers are responsible for clarifying and enforcing our standards of acceptable behavior and will take appropriate and fair corrective action in response to any instances of unacceptable behavior.
+This starter repo contains a minimal Finance Audit Tracker with:
+- Backend: Node + Express + TypeScript
+- Database: PostgreSQL (init.sql included)
+- File store: MinIO (S3 compatible) via Docker Compose
+- Frontend: React + Vite + TypeScript + Tailwind (minimal)
 
-Project maintainers have the right and responsibility to remove, edit, or reject comments, commits, code, wiki edits, issues, and other contributions that are not aligned to this Code of Conduct, or to ban temporarily or permanently any contributor for behaviors that they deem inappropriate, threatening, offensive, or harmful.
+## Quick start (local)
+1. Copy `.env.example` to `.env` and configure values.
+2. Start Docker services:
+   ```bash
+   docker-compose up -d
+````
 
-## Scope
+3. Install backend deps and run backend:
 
-This Code of Conduct applies when an individual is representing the project or its community both within project spaces and in public spaces. Examples of representing a project or community include using an official e-mail address, posting via an official social media account, or acting as an appointed representative at an online or offline event. Representation of a project may be further defined and clarified by project maintainers.
+   ```bash
+   cd backend
+   npm install
+   npm run dev
+   ```
+4. Install frontend deps and run frontend:
 
-## Enforcement
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by first contacting the project team. Oversight of Adobe projects is handled by the Adobe Open Source Office, which has final say in any violations and enforcement of this Code of Conduct and can be reached at Grp-opensourceoffice@adobe.com. All complaints will be reviewed and investigated promptly and fairly.
+Backend API runs at [http://localhost:4000](http://localhost:4000)
+Frontend runs at [http://localhost:5173](http://localhost:5173)
 
-The project team must respect the privacy and security of the reporter of any incident.
+```
+```
 
-Project maintainers who do not follow or enforce the Code of Conduct may face temporary or permanent repercussions as determined by other members of the project's leadership or the Adobe Open Source Office.
+---
 
-## Enforcement Guidelines
+## .env.example
 
-Project maintainers will follow these Community Impact Guidelines in determining the consequences for any action they deem to be in violation of this Code of Conduct:
+```env
+# Postgres
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=audit_tracker
+POSTGRES_PORT=5432
 
-**1. Correction**
+# Server
+PORT=4000
+JWT_SECRET=replace_this_with_a_secure_secret
 
-Community Impact: Use of inappropriate language or other behavior deemed unprofessional or unwelcome in the community.
+# MinIO (S3)
+S3_ENDPOINT=http://localhost:9000
+S3_ACCESS_KEY=minioadmin
+S3_SECRET_KEY=minioadmin
+S3_BUCKET=audit-evidence
 
-Consequence: A private, written warning from project maintainers describing the violation and why the behavior was unacceptable. A public apology may be requested from the violator before any further involvement in the project by violator.
+# Frontend
+VITE_API_URL=http://localhost:4000/api
+```
 
-**2. Warning**
+---
 
-Community Impact: A relatively minor violation through a single incident or series of actions.
+## docker-compose.yml
 
-Consequence: A written warning from project maintainers that includes stated consequences for continued unacceptable behavior. Violator must refrain from interacting with the people involved for a specified period of time as determined by the project maintainers, including, but not limited to, unsolicited interaction with those enforcing the Code of Conduct through channels such as community spaces and social media. Continued violations may lead to a temporary or permanent ban.
+```yaml
+version: '3.8'
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./backend/src/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
 
-**3. Temporary Ban**
+  minio:
+    image: minio/minio
+    command: server /data
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY}
+    ports:
+      - "9000:9000"
+    volumes:
+      - minio-data:/data
 
-Community Impact: A more serious violation of community standards, including sustained unacceptable behavior.
+volumes:
+  db-data:
+  minio-data:
+```
 
-Consequence: A temporary ban from any interaction or public communication with the community for a specified period of time. No public or private interaction with the people involved, including unsolicited interaction with those enforcing the Code of Conduct, is allowed during this period. Failure to comply with the temporary ban may lead to a permanent ban.
+---
 
-**4. Permanent Ban**
+## backend/package.json
 
-Community Impact: Demonstrating a consistent pattern of violation of community standards or an egregious violation of community standards, including, but not limited to, sustained inappropriate behavior, harassment of an individual, or aggression toward or disparagement of classes of individuals.
+```json
+{
+  "name": "audit-tracker-backend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "pg": "^8.11.0",
+    "dotenv": "^16.3.1",
+    "aws-sdk": "^2.1320.0",
+    "jsonwebtoken": "^9.0.0",
+    "multer": "^1.4.5-lts.1"
+  },
+  "devDependencies": {
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.6.0",
+    "@types/express": "^4.17.17",
+    "@types/node": "^20.5.1"
+  }
+}
+```
 
-Consequence: A permanent ban from any interaction with the community.
+---
 
-## Attribution
+## backend/tsconfig.json
 
-This Code of Conduct is adapted from the [Contributor Covenant][homepage], version 2.1,
-available at [https://contributor-covenant.org/version/2/1][version]
+```json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS",
+    "outDir": "dist",
+    "rootDir": "src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  }
+}
+```
 
-[homepage]: https://contributor-covenant.org
-[version]: https://contributor-covenant.org/version/2/1
+---
+
+## backend/src/lib/db.ts
+
+```ts
+import { Pool } from 'pg';
+import dotenv from 'dotenv';
+dotenv.config();
+
+const pool = new Pool({
+  host: 'localhost',
+  port: Number(process.env.POSTGRES_PORT || 5432),
+  user: process.env.POSTGRES_USER,
+  password: process.env.POSTGRES_PASSWORD,
+  database: process.env.POSTGRES_DB,
+});
+
+export default {
+  query: (text: string, params?: any[]) => pool.query(text, params),
+};
+```
+
+---
+
+## backend/src/routes/audits.ts
+
+```ts
+import express from 'express';
+import db from '../lib/db';
+const router = express.Router();
+
+// Create audit
+router.post('/', async (req, res) => {
+  try {
+    const { title, scope, start_date, end_date, owner_id } = req.body;
+    const result = await db.query(
+      `INSERT INTO audits (title, scope, start_date, end_date, owner_id, status, created_at)
+       VALUES ($1,$2,$3,$4,$5,'Draft',NOW()) RETURNING *`,
+      [title, scope, start_date, end_date, owner_id]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'internal error' });
+  }
+});
+
+// Get audits list
+router.get('/', async (req, res) => {
+  const q = await db.query('SELECT * FROM audits ORDER BY created_at DESC LIMIT 100');
+  res.json(q.rows);
+});
+
+export default router;
+```
+
+---
+
+## backend/src/index.ts
+
+```ts
+import express from 'express';
+import dotenv from 'dotenv';
+import bodyParser from 'body-parser';
+import auditsRouter from './routes/audits';
+import db from './lib/db';
+
+dotenv.config();
+const app = express();
+app.use(bodyParser.json());
+
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
+app.use('/api/audits', auditsRouter);
+
+const port = process.env.PORT || 4000;
+app.listen(port, () => console.log(`Server listening on ${port}`));
+```
+
+---
+
+## backend/src/db/init.sql
+
+```sql
+-- Minimal schema for Finance Audit Tracker
+
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  name TEXT,
+  email TEXT UNIQUE NOT NULL,
+  password_hash TEXT,
+  role TEXT,
+  company_id INT,
+  created_at TIMESTAMP DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS audits (
+  id SERIAL PRIMARY KEY,
+  company_id INT,
+  title TEXT NOT NULL,
+  scope TEXT,
+  start_date DATE,
+  end_date DATE,
+  status TEXT,
+  owner_id INT,
+  created_at TIMESTAMP DEFAULT now(),
+  updated_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS audit_areas (
+  id SERIAL PRIMARY KEY,
+  audit_id INT REFERENCES audits(id) ON DELETE CASCADE,
+  name TEXT,
+  description TEXT
+);
+
+CREATE TABLE IF NOT EXISTS checklist_items (
+  id SERIAL PRIMARY KEY,
+  area_id INT REFERENCES audit_areas(id) ON DELETE CASCADE,
+  title TEXT,
+  description TEXT,
+  expected_control TEXT,
+  sample_size INT,
+  status TEXT
+);
+
+CREATE TABLE IF NOT EXISTS data_requests (
+  id SERIAL PRIMARY KEY,
+  audit_id INT REFERENCES audits(id) ON DELETE CASCADE,
+  requester_id INT,
+  assignee_id INT,
+  due_date DATE,
+  status TEXT,
+  description TEXT
+);
+
+CREATE TABLE IF NOT EXISTS evidence_files (
+  id SERIAL PRIMARY KEY,
+  request_id INT,
+  checklist_item_id INT,
+  uploaded_by INT,
+  file_path TEXT,
+  version INT DEFAULT 1,
+  uploaded_at TIMESTAMP DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS findings (
+  id SERIAL PRIMARY KEY,
+  audit_id INT REFERENCES audits(id) ON DELETE CASCADE,
+  checklist_item_id INT,
+  title TEXT,
+  description TEXT,
+  severity TEXT,
+  owner_id INT,
+  due_date DATE,
+  status TEXT,
+  created_at TIMESTAMP DEFAULT now(),
+  closed_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS activity_logs (
+  id SERIAL PRIMARY KEY,
+  audit_id INT,
+  user_id INT,
+  action TEXT,
+  meta_json JSONB,
+  created_at TIMESTAMP DEFAULT now()
+);
+```
+
+---
+
+## frontend/package.json
+
+```json
+{
+  "name": "audit-tracker-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0",
+    "typescript": "^5.6.0",
+    "@types/react": "^18.2.28",
+    "@types/react-dom": "^18.2.11"
+  }
+}
+```
+
+---
+
+## frontend/index.html
+
+```html
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Finance Audit Tracker</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+```
+
+---
+
+## frontend/src/main.tsx
+
+```ts
+import React from 'react'
+import { createRoot } from 'react-dom/client'
+import App from './App'
+
+createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+)
+```
+
+---
+
+## frontend/src/App.tsx
+
+```tsx
+import React, { useEffect, useState } from 'react'
+
+type Audit = { id: number; title: string; scope?: string }
+
+export default function App(){
+  const [audits, setAudits] = useState<Audit[]>([])
+
+  useEffect(()=>{
+    fetch(import.meta.env.VITE_API_URL + '/audits')
+      .then(r=>r.json())
+      .then(setAudits)
+      .catch(console.error)
+  },[])
+
+  return (
+    <div style={{padding:24,fontFamily:'Arial'}}>
+      <h1>Finance Audit Tracker — Starter</h1>
+      <section>
+        <h2>Audits</h2>
+        <ul>
+          {audits.map(a => (
+            <li key={a.id}><strong>{a.title}</strong> — {a.scope}</li>
+          ))}
+        </ul>
+      </section>
+    </div>
+  )
+}
+```
+
+---
+
+## .gitignore
+
+```gitignore
+node_modules/
+dist/
+.env
+```
+
+---
+
+## Next steps I can do right now
+
+1. Package this into a downloadable zip and provide a link.
+2. Flesh out authentication (JWT + signup/login) with code.
+3. Add file upload endpoint (MinIO S3) and sample frontend upload component.
+4. Create advanced frontend pages (Audit detail, Requests, Findings) as React components.
+
+Tell me which of the above you want next and I will generate it immediately in this canvas.
